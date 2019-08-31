@@ -1,6 +1,11 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const Post = require('./models/post');
+const mongoose = require('mongoose');
+const mongodbPassword = require('./../sensitive-data/mongodb-password');
 const app = express();
+
+mongoose.connect(`mongodb+srv://vadym:${mongodbPassword}@cluster0-lrab3.mongodb.net/nodejs-sandbox?retryWrites=true&w=majority`);
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -38,9 +43,12 @@ app.get('/api/posts', (req, res, next) => {
 });
 
 app.post('/api/posts', (req, res, next) => {
-    const body = req.body;
+    const post = new Post({
+        title: req.body.title,
+        content: req.body.content
+    });
     
-    console.log(body);
+    console.log(post);
 
     res.status(201).json({ message: 'Successfully created the post!' });
 });

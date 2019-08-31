@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Subject, Observable } from 'rxjs';
 
-import { Post } from './shared/post.model';
+import { Post } from '../shared/post.model';
 import { HttpClient } from '@angular/common/http';
-import { PostsResponse } from './shared/posts.response.model';
+import { PostsResponse } from '../shared/posts.response.model';
 
 @Injectable({providedIn: 'root'})
 export class PostsService {
