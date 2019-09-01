@@ -13,6 +13,25 @@ export class PostsService {
 
   constructor(private http: HttpClient) { }
 
+  addPost(title: string, content: string): void {
+    const post: ClientPost = {
+      id: null,
+      title,
+      content
+    };
+
+    this.posts.push(post);
+    this.postsUpdated.next([...this.posts]);
+    this.storePostsOnServer('POST', post)
+      .subscribe((response) => {
+        console.log();
+      });
+  }
+
+  updatePost(id: string, title: string, content: string): void {
+    console.log(arguments);
+  }
+
   fetchPosts(): Observable<PostsResponse> {
     return this.http.get<PostsResponse>('http://localhost:3000/api/posts')
       .pipe(
@@ -28,13 +47,17 @@ export class PostsService {
       );
   }
 
+  storePostsOnServer(method: 'POST' | 'PUT', post: ClientPost): Observable<PostsResponse> {
+    return this.http.post<PostsResponse>('http://localhost:3000/api/posts', post);
+  }
+
+  deletePostOnServer(id: string) {
+    return this.http.delete(`http://localhost:3000/api/posts/${id}`);
+  }
+
   storePostsLocally(posts: ClientPost[]): void {
     this.posts = posts;
     this.postsUpdated.next([...this.posts]);
-  }
-
-  storePostsOnServer(method: 'POST' | 'PUT', post: ClientPost): Observable<PostsResponse> {
-    return this.http.post<PostsResponse>('http://localhost:3000/api/posts', post);
   }
 
   deletePostLocally(targetId: string): void {
@@ -49,26 +72,11 @@ export class PostsService {
     }
   }
 
-  deletePostOnServer(id: string) {
-    return this.http.delete(`http://localhost:3000/api/posts/${id}`);
+  getPosts(): ClientPost[] {
+    return [...this.posts];
   }
 
   getPostUpdateListener() {
     return this.postsUpdated.asObservable();
-  }
-
-  addPost(title: string, content: string): void {
-    const post: ClientPost = {
-      id: null,
-      title: title,
-      content: content
-    };
-
-    this.posts.push(post);
-    this.postsUpdated.next([...this.posts]);
-    this.storePostsOnServer('POST', post)
-      .subscribe((response) => {
-        console.log();
-      });
   }
 }
