@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from "@angular/core";
 import { Subscription } from 'rxjs';
 
-import { Post } from "../../shared/post.model";
+import { ClientPost } from "../../shared/post.model";
 import { PostsService } from "../posts.service";
 import { PostsResponse } from "../../shared/posts.response.model";
 
@@ -11,24 +11,31 @@ import { PostsResponse } from "../../shared/posts.response.model";
   styleUrls: ["./post-list.component.css"]
 })
 export class PostListComponent implements OnInit, OnDestroy {
-  public posts: Post[] = [];
-  private postsSub: Subscription;
+  public posts: ClientPost[] = [];
+  private subscriptionsArray: Subscription[] = [];
 
   constructor(public postsService: PostsService) {}
 
-  ngOnInit() {
-    this.postsService.fetchPosts()
-      .subscribe((response: PostsResponse) => {
-        this.postsService.storePostsLocally(response.posts);
-      });
+  onPostDelete(id: string): void {
+    this.subscriptionsArray.push(this.postsService.deletePostOnServer(id)
+      .subscribe(({id: targetId}: {message: string, id: string}) => {
+        this.postsService.deletePostLocally(targetId);
+      }));
+  }
 
-    this.postsSub = this.postsService.getPostUpdateListener()
-      .subscribe((posts: Post[]) => {
+  ngOnInit() {
+    this.subscriptionsArray.push(this.postsService.fetchPosts()
+      .subscribe((response: PostsResponse) => {
+        this.postsService.storePostsLocally(response.posts as ClientPost[]);
+      }));
+
+      this.subscriptionsArray.push(this.postsService.getPostUpdateListener()
+      .subscribe((posts: ClientPost[]) => {
         this.posts = posts;
-      });
+      }));
   }
 
   ngOnDestroy() {
-    this.postsSub.unsubscribe();
+    this.subscriptionsArray.forEach(subscription => subscription.unsubscribe());
   }
 }

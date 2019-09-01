@@ -1,6 +1,6 @@
-import { Post } from "./post.model";
+import { ServerPost } from "./post.model";
 
 export interface PostsResponse {
     message: string;
-    posts?: Post[];
+    posts?: ServerPost[];
 }

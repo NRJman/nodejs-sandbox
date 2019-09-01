@@ -5,7 +5,13 @@ const mongoose = require('mongoose');
 const mongodbPassword = require('./../sensitive-data/mongodb-password');
 const app = express();
 
-mongoose.connect(`mongodb+srv://vadym:${mongodbPassword}@cluster0-lrab3.mongodb.net/nodejs-sandbox?retryWrites=true&w=majority`);
+mongoose.connect(`mongodb+srv://vadym:${mongodbPassword}@cluster0-lrab3.mongodb.net/nodejs-sandbox?retryWrites=true&w=majority`)
+    .then(() => {
+        console.log('Connected to a db!');
+    })
+    .catch(() => {
+        console.log('Failed to connect to a db');
+    });
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -17,7 +23,7 @@ app.use((req, res, next) => {
         'Origin, X-Requested-With, Content-Type, Accept'
     );
     res.setHeader(
-        'Acess-Control-Allow-Methods',
+        'Access-Control-Allow-Methods',
         'GET, POST, PATCH, DELETE, OPTIONS'
     );
 
@@ -30,16 +36,18 @@ app.get('/', (req, res, next) => {
 });
 
 app.get('/api/posts', (req, res, next) => {
-    const posts = [
-        { title: "First Post", content: "This is the first post's content" },
-        { title: "Second Post", content: "This is the second post's content" },
-        { title: "Third Post", content: "This is the third post's content" }
-    ];
+    const promisedFind = Post.find().exec();
 
-    res.status(200).json({
-        message: 'Successfully fetched the posts!',
-        posts
-    });
+    promisedFind
+        .then((posts) => {
+            res.status(200).json({
+                message: 'Successfully fetched the posts!',
+                posts
+            });
+        })
+        .catch((error) => {
+            console.log('Failed to get instance of posts collection: ', error);
+        });
 });
 
 app.post('/api/posts', (req, res, next) => {
@@ -49,8 +57,26 @@ app.post('/api/posts', (req, res, next) => {
     });
     
     console.log(post);
+    post.save();
 
     res.status(201).json({ message: 'Successfully created the post!' });
+});
+
+app.delete('/api/posts/:id', (req, res, next) => {
+    const targetId = req.params.id;
+    const promisedDeleteOne = Post.deleteOne({ _id: targetId }).exec();
+
+    promisedDeleteOne
+        .then((data) => {
+            console.log(data);
+            res.status(200).json({
+                message: 'Successfully deleted the post!',
+                id: targetId
+            });
+        })
+        .catch(() => {
+            console.log('Failed to delete specified post: ', error);
+        });
 });
 
 module.exports = app;

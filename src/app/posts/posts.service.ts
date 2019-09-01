@@ -1,28 +1,56 @@
 import { Injectable } from '@angular/core';
 import { Subject, Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
-import { Post } from '../shared/post.model';
+import { ClientPost, ServerPost } from '../shared/post.model';
 import { HttpClient } from '@angular/common/http';
 import { PostsResponse } from '../shared/posts.response.model';
 
 @Injectable({providedIn: 'root'})
 export class PostsService {
-  private posts: Post[] = [];
-  private postsUpdated = new Subject<Post[]>();
+  private posts: ClientPost[] = [];
+  private postsUpdated = new Subject<ClientPost[]>();
 
   constructor(private http: HttpClient) { }
 
   fetchPosts(): Observable<PostsResponse> {
-    return this.http.get<PostsResponse>('http://localhost:3000/api/posts');
+    return this.http.get<PostsResponse>('http://localhost:3000/api/posts')
+      .pipe(
+        map((response: PostsResponse) => {
+          return {
+            ...response,
+            posts: response.posts.map((post: ServerPost) => ({
+              ...post,
+              id: post._id
+            }))
+          };
+        })
+      );
   }
 
-  storePostsLocally(posts: Post[]): void {
+  storePostsLocally(posts: ClientPost[]): void {
     this.posts = posts;
     this.postsUpdated.next([...this.posts]);
   }
 
-  storePostsOnServer(method: 'POST' | 'PUT', payload: Post): Observable<PostsResponse> {
-    return this.http.post<PostsResponse>('http://localhost:3000/api/posts', payload);
+  storePostsOnServer(method: 'POST' | 'PUT', post: ClientPost): Observable<PostsResponse> {
+    return this.http.post<PostsResponse>('http://localhost:3000/api/posts', post);
+  }
+
+  deletePostLocally(targetId: string): void {
+    const posts = this.posts;
+
+    for (let i = 0, len = posts.length; i < len; i++) {
+      if (posts[i].id === targetId) {
+        posts.splice(i, 1);
+        this.postsUpdated.next([...this.posts]);
+        break;
+      }
+    }
+  }
+
+  deletePostOnServer(id: string) {
+    return this.http.delete(`http://localhost:3000/api/posts/${id}`);
   }
 
   getPostUpdateListener() {
@@ -30,7 +58,12 @@ export class PostsService {
   }
 
   addPost(title: string, content: string): void {
-    const post: Post = {title: title, content: content};
+    const post: ClientPost = {
+      id: null,
+      title: title,
+      content: content
+    };
+
     this.posts.push(post);
     this.postsUpdated.next([...this.posts]);
     this.storePostsOnServer('POST', post)
