@@ -19,7 +19,7 @@ export class PostListComponent implements OnInit, OnDestroy {
 
   onPostDelete(id: string): void {
     this.subscriptionsArray.push(this.postsService.deletePostOnServer(id)
-      .subscribe(({id: targetId}: {message: string, id: string}) => {
+      .subscribe(({id: targetId}: PostsResponse) => {
         this.postsService.deletePostLocally(targetId);
       }));
   }
@@ -28,19 +28,27 @@ export class PostListComponent implements OnInit, OnDestroy {
     this.router.navigate(['/edit-post', id]);
   }
 
-  ngOnInit() {
-    this.subscriptionsArray.push(this.postsService.fetchPosts()
-      .subscribe((response: PostsResponse) => {
-        this.postsService.storePostsLocally(response.posts as ClientPost[]);
-      }));
-
-    this.subscriptionsArray.push(this.postsService.getPostUpdateListener()
-      .subscribe((posts: ClientPost[]) => {
-        this.posts = posts;
-      }));
+  ngOnInit(): void {
+    this.handleComponentSubscribtions();
   }
 
-  ngOnDestroy() {
+  ngOnDestroy(): void {
     this.subscriptionsArray.forEach(subscription => subscription.unsubscribe());
+  }
+
+  private handleComponentSubscribtions(): void {
+    this.subscriptionsArray.push(
+      this.postsService.fetchPosts()
+        .subscribe((response: PostsResponse) => {
+          this.postsService.storePostsLocally(response.posts as ClientPost[]);
+        })
+    );
+
+    this.subscriptionsArray.push(
+      this.postsService.getPostsUpdateListener()
+        .subscribe((posts: ClientPost[]) => {
+          this.posts = posts;
+        })
+    );
   }
 }

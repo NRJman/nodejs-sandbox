@@ -69,13 +69,36 @@ app.delete('/api/posts/:id', (req, res, next) => {
     promisedDeleteOne
         .then((data) => {
             console.log(data);
+
             res.status(200).json({
                 message: 'Successfully deleted the post!',
                 id: targetId
             });
         })
-        .catch(() => {
-            console.log('Failed to delete specified post: ', error);
+        .catch((error) => {
+            console.log('Failed to delete the specified post:', error);
+        });
+});
+
+app.patch('/api/posts/:id', (req, res, next) => {
+    const targetId = req.params.id;
+    const newTitle = req.body.title;
+    const newContent = req.body.content; 
+    const promisedUpdateOne = Post.updateOne({ _id: targetId }, { title: newTitle, content: newContent}).exec();
+
+    promisedUpdateOne
+        .then((data) => {
+            console.log(data);
+        
+            res.status(200).json({
+                message: 'Successfully updated the post!',
+                id: targetId,
+                title: newTitle,
+                content: newContent
+            });
+        })
+        .catch((error) => {
+            console.log('Failed to update the specified post:', error);
         });
 });
 
