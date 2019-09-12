@@ -3,26 +3,29 @@ import { NgForm, FormGroup, FormControl, Validators } from '@angular/forms';
 
 import { PostsService } from '../posts.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ClientPost } from 'src/app/shared/post.model';
+import { ClientPost } from 'src/app/shared/models/post.model';
 import { Subscription } from 'rxjs';
-import { PostsResponse } from 'src/app/shared/posts.response.model';
+import { PostsResponse } from 'src/app/shared/models/posts.response.model';
+import { UnsubscriberService } from 'src/app/shared/services/unsubscriber.service';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-post-create',
   templateUrl: './post-create.component.html',
   styleUrls: ['./post-create.component.css']
 })
-export class PostCreateComponent implements OnInit, OnDestroy {
+export class PostCreateComponent extends UnsubscriberService implements OnInit, OnDestroy {
   private postForm: FormGroup;
   private isEditMode = false;
   private targetPostId: string;
-  private getExactPostUpdateSubscription: Subscription;
 
   constructor(
     private postsService: PostsService,
     private route: ActivatedRoute,
     private router: Router
-  ) {}
+  ) {
+    super();
+  }
 
   handlePostFormSubmission(): void {
     if (this.postForm.invalid) {
@@ -45,7 +48,7 @@ export class PostCreateComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.getExactPostUpdateSubscription.unsubscribe();
+    super.ngOnDestroy();
   }
 
   private initializePostForm(): void {
@@ -71,7 +74,10 @@ export class PostCreateComponent implements OnInit, OnDestroy {
   }
 
   private handleComponentSubscriptions(): void {
-    this.getExactPostUpdateSubscription = this.postsService.getExactPostUpdateListener()
+    this.postsService.getExactPostUpdateListener()
+      .pipe(
+        takeUntil(this.subscriptionController$$)
+      )
       .subscribe(({ id, title, content }: PostsResponse) => {
         this.postsService.updateExactPostLocally({ id, title, content });
         this.router.navigate(['/']);

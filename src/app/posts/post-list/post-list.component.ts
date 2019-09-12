@@ -1,27 +1,33 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subscription } from 'rxjs';
 
-import { ClientPost } from '../../shared/post.model';
+import { ClientPost } from '../../shared/models/post.model';
 import { PostsService } from '../posts.service';
-import { PostsResponse } from '../../shared/posts.response.model';
+import { PostsResponse } from '../../shared/models/posts.response.model';
 import { RouterModule, Router } from '@angular/router';
+import { UnsubscriberService } from 'src/app/shared/services/unsubscriber.service';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-post-list',
   templateUrl: './post-list.component.html',
   styleUrls: ['./post-list.component.css']
 })
-export class PostListComponent implements OnInit, OnDestroy {
+export class PostListComponent extends UnsubscriberService implements OnInit, OnDestroy {
   public posts: ClientPost[] = [];
-  private subscriptionsArray: Subscription[] = [];
 
-  constructor(public postsService: PostsService, private router: Router) {}
+  constructor(public postsService: PostsService, private router: Router) {
+    super();
+  }
 
   onPostDelete(id: string): void {
-    this.subscriptionsArray.push(this.postsService.deletePostOnServer(id)
+    this.postsService.deletePostOnServer(id)
+      .pipe(
+        takeUntil(this.subscriptionController$$)
+      )
       .subscribe(({id: targetId}: PostsResponse) => {
         this.postsService.deletePostLocally(targetId);
-      }));
+      });
   }
 
   onPostEdit(id: string): void {
@@ -33,22 +39,24 @@ export class PostListComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.subscriptionsArray.forEach(subscription => subscription.unsubscribe());
+    super.ngOnDestroy();
   }
 
   private handleComponentSubscribtions(): void {
-    this.subscriptionsArray.push(
-      this.postsService.fetchPosts()
-        .subscribe((response: PostsResponse) => {
-          this.postsService.storePostsLocally(response.posts as ClientPost[]);
-        })
-    );
+    this.postsService.fetchPosts()
+      .pipe(
+        takeUntil(this.subscriptionController$$)
+      )
+      .subscribe((response: PostsResponse) => {
+        this.postsService.storePostsLocally(response.posts as ClientPost[]);
+      });
 
-    this.subscriptionsArray.push(
-      this.postsService.getPostsUpdateListener()
-        .subscribe((posts: ClientPost[]) => {
-          this.posts = posts;
-        })
-    );
+    this.postsService.getPostsUpdateListener()
+      .pipe(
+        takeUntil(this.subscriptionController$$)
+      )
+      .subscribe((posts: ClientPost[]) => {
+        this.posts = posts;
+      });
   }
 }
