@@ -1,5 +1,5 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { Component, OnInit, OnDestroy, Input } from '@angular/core';
+import { Subscription, Observable } from 'rxjs';
 
 import { ClientPost } from '../../shared/models/post.model';
 import { PostsService } from '../posts.service';
@@ -15,6 +15,7 @@ import { takeUntil } from 'rxjs/operators';
 })
 export class PostListComponent extends UnsubscriberService implements OnInit, OnDestroy {
   public posts: ClientPost[] = [];
+  public postsListPending: boolean = this.postsService.postsListPending;
 
   constructor(public postsService: PostsService, private router: Router) {
     super();
@@ -35,28 +36,30 @@ export class PostListComponent extends UnsubscriberService implements OnInit, On
   }
 
   ngOnInit(): void {
-    this.handleComponentSubscribtions();
+    this.posts = this.postsService.getPosts();
+
+    this.handleSubscriptions();
   }
 
   ngOnDestroy(): void {
     super.ngOnDestroy();
   }
 
-  private handleComponentSubscribtions(): void {
-    this.postsService.fetchPosts()
-      .pipe(
-        takeUntil(this.subscriptionController$$)
-      )
-      .subscribe((response: PostsResponse) => {
-        this.postsService.storePostsLocally(response.posts as ClientPost[]);
-      });
-
+  private handleSubscriptions(): void {
     this.postsService.getPostsUpdateListener()
       .pipe(
         takeUntil(this.subscriptionController$$)
       )
       .subscribe((posts: ClientPost[]) => {
         this.posts = posts;
+      });
+
+      this.postsService.postsListPendingUpdated$
+      .pipe(
+        takeUntil(this.subscriptionController$$)
+      )
+      .subscribe((isPostsListPending: boolean) => {
+        this.postsListPending = isPostsListPending;
       });
   }
 }

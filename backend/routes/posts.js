@@ -6,10 +6,16 @@ router.get('', (req, res, next) => {
     const promisedFind = Post.find().exec();
 
     promisedFind
-        .then((posts) => {
+        .then((posts) => {            
             res.status(200).json({
                 message: 'Successfully fetched the posts!',
-                posts
+                posts: posts.map((post) => {
+                    return {
+                        id: post._id,
+                        title: post.title,
+                        content: post.content
+                    }
+                })
             });
         })
         .catch((error) => {
@@ -26,7 +32,14 @@ router.post('', (req, res, next) => {
     console.log(post);
     post.save();
 
-    res.status(201).json({ message: 'Successfully created the post!' });
+    res.status(201).json({ 
+        message: 'Successfully created the post!',
+        post: {
+            id: post._id,
+            title: post.title,
+            content: post.content
+        }
+    });
 });
 
 router.delete('/:id', (req, res, next) => {
@@ -59,9 +72,11 @@ router.patch('/:id', (req, res, next) => {
         
             res.status(200).json({
                 message: 'Successfully updated the post!',
-                id: targetId,
-                title: newTitle,
-                content: newContent
+                post: {
+                    id: targetId,
+                    title: newTitle,
+                    content: newContent
+                }
             });
         })
         .catch((error) => {

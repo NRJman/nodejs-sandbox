@@ -15,6 +15,7 @@ import { takeUntil } from 'rxjs/operators';
   styleUrls: ['./post-create.component.css']
 })
 export class PostCreateComponent extends UnsubscriberService implements OnInit, OnDestroy {
+  public postsListPending: boolean = this.postsService.postsListPending;
   private postForm: FormGroup;
   private isEditMode = false;
   private targetPostId: string;
@@ -38,42 +39,70 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
       return;
     }
 
-    this.postsService.addPost(this.postForm.value.title, this.postForm.value.content);
-    this.postForm.reset();
+    this.postsService.storePostOnServer(this.postForm.value.title, this.postForm.value.content)
+      .pipe(
+        takeUntil(this.subscriptionController$$)
+      )
+      .subscribe((response: { message: string, post: ClientPost }) => {
+        this.postsService.addPost(response.post);
+        this.router.navigate(['/']);
+      });
   }
 
   ngOnInit(): void {
-    this.initializePostForm();
-    this.handleComponentSubscriptions();
+    this.targetPostId = this.route.snapshot.params.id;
+
+    if (this.targetPostId) {
+      this.isEditMode = true;
+    }
+
+    this.handlePostFormInitializing();
+    this.handleSubscriptions();
   }
 
   ngOnDestroy(): void {
     super.ngOnDestroy();
   }
 
-  private initializePostForm(): void {
-    let initialPostFormTitle: string = null;
-    let initialPostFormContent: string = null;
+  private handlePostFormInitializing(): void {
+    if (!this.isEditMode) {
+      this.initializePostForm(null);
+      this.postsListPending = false;
 
-    this.targetPostId = this.route.snapshot.params.id;
-
-    if (this.targetPostId) {
-      const neededPost: ClientPost = this.postsService.getPosts().find(post => {
-        return post.id === this.targetPostId;
-      });
-
-      initialPostFormTitle = neededPost.title;
-      initialPostFormContent = neededPost.content;
-      this.isEditMode = true;
+      return;
     }
 
+    if (this.postsService.getPosts().length) {
+      this.initializePostForm(getNeededPost(this.postsService.getPosts(), this.targetPostId));
+    }
+
+    this.postsService.postsListPendingUpdated$
+      .pipe(
+        takeUntil(this.subscriptionController$$)
+      )
+      .subscribe((isPostsListPending: boolean) => {
+        this.postsListPending = isPostsListPending;
+
+        if (!isPostsListPending) {
+          this.initializePostForm(getNeededPost(this.postsService.getPosts(), this.targetPostId));
+        }
+      });
+
+    function getNeededPost(posts: ClientPost[], targetPostId: string): ClientPost {
+      return posts.find(post => {
+        return post.id === targetPostId;
+      });
+    }
+  }
+
+  private initializePostForm(neededPost: ClientPost): void {
     this.postForm = new FormGroup({
-      title: new FormControl(initialPostFormTitle, [Validators.minLength(3), Validators.required]),
-      content: new FormControl(initialPostFormContent, [Validators.required])
+      title: new FormControl(neededPost ? neededPost.title : null, [Validators.minLength(3), Validators.required]),
+      content: new FormControl(neededPost ? neededPost.content : null, [Validators.required])
     });
   }
 
-  private handleComponentSubscriptions(): void {
+  private handleSubscriptions(): void {
     this.postsService.getExactPostUpdateListener()
       .pipe(
         takeUntil(this.subscriptionController$$)
