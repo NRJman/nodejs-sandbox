@@ -30,11 +30,11 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use('/api/posts', postsRoutes);
-
 app.get('/', (req, res, next) => {
     res.setHeader('Content-Type', 'text/html');
     res.send('<h1>The home server page!</h1>');
 });
+
+app.use('/api/posts', postsRoutes);
 
 module.exports = app;

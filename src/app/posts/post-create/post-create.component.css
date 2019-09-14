@@ -2,3 +2,20 @@ mat-form-field,
 textarea {
   width: 100%;
 }
+
+.file-upload-section {
+  padding-bottom: 1.25em;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.file-upload {
+  display: none;
+}
+
+.image-file {
+  max-width: 7rem;
+  max-height: 7rem;
+  margin-left: 1rem;
+}

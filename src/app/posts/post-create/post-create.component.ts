@@ -16,6 +16,8 @@ import { takeUntil } from 'rxjs/operators';
 })
 export class PostCreateComponent extends UnsubscriberService implements OnInit, OnDestroy {
   public postsListPending: boolean = this.postsService.postsListPending;
+  public imageSrc: ArrayBuffer | string;
+  public imageTitle: string;
   private postForm: FormGroup;
   private isEditMode = false;
   private targetPostId: string;
@@ -47,6 +49,22 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
         this.postsService.addPost(response.post);
         this.router.navigate(['/']);
       });
+  }
+
+  onFileValueChange(event: Event): void {
+    const file = (event.target as HTMLInputElement).files[0];
+    const fileReader = new FileReader();
+
+    fileReader.addEventListener('load', () => {
+      this.imageSrc = fileReader.result;
+    });
+
+    if (file) {
+      this.postForm.patchValue({ image: file });
+      this.postForm.get('image').updateValueAndValidity();
+      this.imageTitle = file.name;
+      fileReader.readAsDataURL(file);
+    }
   }
 
   ngOnInit(): void {
@@ -98,7 +116,8 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
   private initializePostForm(neededPost: Post): void {
     this.postForm = new FormGroup({
       title: new FormControl(neededPost ? neededPost.title : null, [Validators.minLength(3), Validators.required]),
-      content: new FormControl(neededPost ? neededPost.content : null, [Validators.required])
+      content: new FormControl(neededPost ? neededPost.content : null, [Validators.required]),
+      image: new FormControl(null, [Validators.required])
     });
   }
 

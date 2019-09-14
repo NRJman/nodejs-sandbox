@@ -10,6 +10,12 @@
       <mat-error *ngIf="postForm.get('title').invalid && postForm.get('title').touched">Please enter a post title.</mat-error>
     </mat-form-field>
 
+    <div class="file-upload-section">
+      <button mat-stroked-button type="button" (click)="formFile.click()">Upload File</button>
+      <input class="file-upload" type="file" #formFile (change)="onFileValueChange($event)">
+      <img class="image-file" *ngIf="imageSrc" [src]="imageSrc" [alt]="imageTitle">
+    </div>
+
     <mat-form-field>
       <textarea
         matInput
