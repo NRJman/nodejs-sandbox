@@ -1,10 +1,9 @@
-import { Component, OnInit, OnDestroy, Input } from '@angular/core';
-import { Subscription, Observable } from 'rxjs';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 
-import { ClientPost } from '../../shared/models/post.model';
+import { Post } from '../../shared/models/post.model';
 import { PostsService } from '../posts.service';
 import { PostsResponse } from '../../shared/models/posts.response.model';
-import { RouterModule, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { UnsubscriberService } from 'src/app/shared/services/unsubscriber.service';
 import { takeUntil } from 'rxjs/operators';
 
@@ -14,7 +13,7 @@ import { takeUntil } from 'rxjs/operators';
   styleUrls: ['./post-list.component.css']
 })
 export class PostListComponent extends UnsubscriberService implements OnInit, OnDestroy {
-  public posts: ClientPost[] = [];
+  public posts: Post[] = [];
   public postsListPending: boolean = this.postsService.postsListPending;
 
   constructor(public postsService: PostsService, private router: Router) {
@@ -26,8 +25,8 @@ export class PostListComponent extends UnsubscriberService implements OnInit, On
       .pipe(
         takeUntil(this.subscriptionController$$)
       )
-      .subscribe(({id: targetId}: PostsResponse) => {
-        this.postsService.deletePostLocally(targetId);
+      .subscribe(({ post }: PostsResponse) => {
+        this.postsService.deletePostLocally(post.id);
       });
   }
 
@@ -50,11 +49,11 @@ export class PostListComponent extends UnsubscriberService implements OnInit, On
       .pipe(
         takeUntil(this.subscriptionController$$)
       )
-      .subscribe((posts: ClientPost[]) => {
+      .subscribe((posts: Post[]) => {
         this.posts = posts;
       });
 
-      this.postsService.postsListPendingUpdated$
+    this.postsService.postsListPendingUpdated$
       .pipe(
         takeUntil(this.subscriptionController$$)
       )

@@ -3,7 +3,7 @@ import { UnsubscriberService } from './shared/services/unsubscriber.service';
 import { PostsService } from './posts/posts.service';
 import { takeUntil, delay } from 'rxjs/operators';
 import { PostsResponse } from './shared/models/posts.response.model';
-import { ClientPost } from './shared/models/post.model';
+import { Post } from './shared/models/post.model';
 
 @Component({
   selector: 'app-root',
@@ -31,7 +31,7 @@ export class AppComponent extends UnsubscriberService implements OnInit, OnDestr
         takeUntil(this.subscriptionController$$)
       )
       .subscribe((response: PostsResponse) => {
-        this.postsService.storePostsLocally(response.posts as ClientPost[]);
+        this.postsService.storePostsLocally(response.posts as Post[]);
         this.postsService.postsListPending = false;
       });
   }

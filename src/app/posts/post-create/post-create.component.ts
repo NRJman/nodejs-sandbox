@@ -3,7 +3,7 @@ import { NgForm, FormGroup, FormControl, Validators } from '@angular/forms';
 
 import { PostsService } from '../posts.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ClientPost } from 'src/app/shared/models/post.model';
+import { Post } from 'src/app/shared/models/post.model';
 import { Subscription } from 'rxjs';
 import { PostsResponse } from 'src/app/shared/models/posts.response.model';
 import { UnsubscriberService } from 'src/app/shared/services/unsubscriber.service';
@@ -43,7 +43,7 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
       .pipe(
         takeUntil(this.subscriptionController$$)
       )
-      .subscribe((response: { message: string, post: ClientPost }) => {
+      .subscribe((response: { message: string, post: Post }) => {
         this.postsService.addPost(response.post);
         this.router.navigate(['/']);
       });
@@ -88,14 +88,14 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
         }
       });
 
-    function getNeededPost(posts: ClientPost[], targetPostId: string): ClientPost {
+    function getNeededPost(posts: Post[], targetPostId: string): Post {
       return posts.find(post => {
         return post.id === targetPostId;
       });
     }
   }
 
-  private initializePostForm(neededPost: ClientPost): void {
+  private initializePostForm(neededPost: Post): void {
     this.postForm = new FormGroup({
       title: new FormControl(neededPost ? neededPost.title : null, [Validators.minLength(3), Validators.required]),
       content: new FormControl(neededPost ? neededPost.content : null, [Validators.required])
@@ -107,8 +107,12 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
       .pipe(
         takeUntil(this.subscriptionController$$)
       )
-      .subscribe(({ id, title, content }: PostsResponse) => {
-        this.postsService.updateExactPostLocally({ id, title, content });
+      .subscribe(({ post }: PostsResponse) => {
+        this.postsService.updateExactPostLocally({
+          id: post.id,
+          title: post.title,
+          content: post.content
+        });
         this.router.navigate(['/']);
       });
   }

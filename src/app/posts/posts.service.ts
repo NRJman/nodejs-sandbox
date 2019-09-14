@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { Subject, Observable, BehaviorSubject } from 'rxjs';
-import { map, switchMap } from 'rxjs/operators';
+import { Subject, Observable } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 
-import { ClientPost, ServerPost } from '../shared/models/post.model';
+import { Post } from '../shared/models/post.model';
 import { HttpClient } from '@angular/common/http';
 import { PostsResponse } from '../shared/models/posts.response.model';
 
@@ -10,14 +10,14 @@ import { PostsResponse } from '../shared/models/posts.response.model';
 export class PostsService {
   private _postsListPendingUpdated$$: Subject<boolean> = new Subject<boolean>();
   private _postsListPending: boolean;
-  private posts: ClientPost[] = [];
-  private postsUpdated$$: Subject<ClientPost[]> = new Subject<ClientPost[]>();
+  private posts: Post[] = [];
+  private postsUpdated$$: Subject<Post[]> = new Subject<Post[]>();
   private exactPostUpdated$$: Subject<Observable<PostsResponse>> = new Subject<Observable<PostsResponse>>();
   private postsAPIServerURL = 'http://localhost:3000/api/posts/';
 
   constructor(private http: HttpClient) { }
 
-  addPost(post: ClientPost): void {
+  addPost(post: Post): void {
     this.posts.push(post);
     this.postsUpdated$$.next(this.getPosts());
   }
@@ -40,7 +40,7 @@ export class PostsService {
     );
   }
 
-  storePostsLocally(posts: ClientPost[]): void {
+  storePostsLocally(posts: Post[]): void {
     this.posts = posts;
     this.postsUpdated$$.next([...this.posts]);
   }
@@ -57,8 +57,8 @@ export class PostsService {
     }
   }
 
-  updateExactPostLocally({ id, title, content }: ClientPost): void {
-    const posts: ClientPost[] = this.posts;
+  updateExactPostLocally({ id, title, content }: Post): void {
+    const posts: Post[] = this.posts;
 
     for (let i = 0, len = posts.length; i < len; i++) {
       if (posts[i].id === id) {
@@ -80,7 +80,7 @@ export class PostsService {
     this._postsListPending = isPostsListPending;
   }
 
-  getPosts(): ClientPost[] {
+  getPosts(): Post[] {
     return [...this.posts];
   }
 

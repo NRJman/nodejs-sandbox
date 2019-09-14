@@ -1,9 +1,8 @@
-import { ServerPost } from './post.model';
+import { Post } from './post.model';
 
 export interface PostsResponse {
     message: string;
-    posts?: ServerPost[];
+    posts?: Post[];
+    post?: Post;
     id?: string;
-    title?: string;
-    content?: string;
 }
