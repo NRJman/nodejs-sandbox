@@ -17,13 +17,15 @@ import { HeaderComponent } from './header/header.component';
 import { PostListComponent } from './posts/post-list/post-list.component';
 import { HttpClientModule } from '@angular/common/http';
 import { AppRoutingModule } from './app-routing.module';
+import { MarkControlAsTouchedDirective } from './posts/post-create/mark-control-as-touched.directive';
 
 @NgModule({
   declarations: [
     AppComponent,
     PostCreateComponent,
     HeaderComponent,
-    PostListComponent
+    PostListComponent,
+    MarkControlAsTouchedDirective
   ],
   imports: [
     BrowserModule,

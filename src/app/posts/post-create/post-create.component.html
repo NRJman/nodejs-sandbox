@@ -10,10 +10,37 @@
       <mat-error *ngIf="postForm.get('title').invalid && postForm.get('title').touched">Please enter a post title.</mat-error>
     </mat-form-field>
 
-    <div class="file-upload-section">
-      <button mat-stroked-button type="button" (click)="formFile.click()">Upload File</button>
-      <input class="file-upload" type="file" #formFile (change)="onFileValueChange($event)">
-      <img class="image-file" *ngIf="imageSrc" [src]="imageSrc" [alt]="imageTitle">
+    <div class="file-upload-control-wrapper">
+      <div class="file-upload-control">
+        <button 
+          appMarkControlAsTouched 
+          mat-stroked-button
+          type="button"
+          (touchImageControl)="onImageControlTouch()"
+          (click)="formFile.click()"
+        >Upload File</button>
+        
+        <input class="file-upload" type="file" #formFile (change)="onFileValueChange($event)">
+        
+        <img
+          class="image-file"
+          [src]="imageSrc"
+          [alt]="imageTitle"
+          *ngIf="imageSrc && postForm.get('image').valid">
+      </div>
+
+      <div class="file-upload-control-errors">
+        <mat-error 
+          *ngIf="postForm.get('image').errors?.required &&
+                postForm.get('image').touched"
+        >Please upload a post image.</mat-error>
+  
+        <mat-error 
+          *ngIf="postForm.get('image').errors?.fileIsNotImage &&
+                !postForm.get('image').errors?.required &&
+                postForm.get('image').touched"
+        >Only images are allowed.</mat-error>
+      </div>
     </div>
 
     <mat-form-field>
@@ -28,7 +55,9 @@
     <button
       mat-raised-button
       color="accent"
-      type="submit">Save Post</button>
+      type="submit"
+      [disabled]="postForm.invalid"
+      >Save Post</button>
   </form>
 </mat-card>
 

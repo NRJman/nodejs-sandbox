@@ -8,15 +8,17 @@ import { Subscription } from 'rxjs';
 import { PostsResponse } from 'src/app/shared/models/posts.response.model';
 import { UnsubscriberService } from 'src/app/shared/services/unsubscriber.service';
 import { takeUntil } from 'rxjs/operators';
+import { ValidatorsService } from 'src/app/shared/services/validators.service';
 
 @Component({
   selector: 'app-post-create',
   templateUrl: './post-create.component.html',
-  styleUrls: ['./post-create.component.css']
+  styleUrls: ['./post-create.component.css'],
+  providers: [ValidatorsService]
 })
 export class PostCreateComponent extends UnsubscriberService implements OnInit, OnDestroy {
   public postsListPending: boolean = this.postsService.postsListPending;
-  public imageSrc: ArrayBuffer | string;
+  public imageSrc: string;
   public imageTitle: string;
   private postForm: FormGroup;
   private isEditMode = false;
@@ -25,7 +27,8 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
   constructor(
     private postsService: PostsService,
     private route: ActivatedRoute,
-    private router: Router
+    private router: Router,
+    private validatorsService: ValidatorsService
   ) {
     super();
   }
@@ -56,7 +59,7 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
     const fileReader = new FileReader();
 
     fileReader.addEventListener('load', () => {
-      this.imageSrc = fileReader.result;
+      this.imageSrc = fileReader.result as string;
     });
 
     if (file) {
@@ -65,6 +68,10 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
       this.imageTitle = file.name;
       fileReader.readAsDataURL(file);
     }
+  }
+
+  onImageControlTouch(): void {
+    this.postForm.get('image').markAsTouched();
   }
 
   ngOnInit(): void {
@@ -117,7 +124,7 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
     this.postForm = new FormGroup({
       title: new FormControl(neededPost ? neededPost.title : null, [Validators.minLength(3), Validators.required]),
       content: new FormControl(neededPost ? neededPost.content : null, [Validators.required]),
-      image: new FormControl(null, [Validators.required])
+      image: new FormControl(null, [Validators.required], [this.validatorsService.fileTypedAsImage])
     });
   }
 

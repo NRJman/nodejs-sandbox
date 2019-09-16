@@ -3,11 +3,19 @@ textarea {
   width: 100%;
 }
 
-.file-upload-section {
+.file-upload-control-wrapper {
   padding-bottom: 1.25em;
+}
+
+.file-upload-control {
   display: flex;
   justify-content: flex-start;
   align-items: center;
+}
+
+.file-upload-control-errors {
+  margin-top: .4rem;
+  font-size: .75rem;
 }
 
 .file-upload {
