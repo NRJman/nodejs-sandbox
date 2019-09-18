@@ -44,7 +44,9 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
       return;
     }
 
-    this.postsService.storePostOnServer(this.postForm.value.title, this.postForm.value.content)
+    const postFormValue = this.postForm.value;
+
+    this.postsService.storePostOnServer(postFormValue.title, postFormValue.content, postFormValue.image)
       .pipe(
         takeUntil(this.subscriptionController$$)
       )

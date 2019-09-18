@@ -6,3 +6,8 @@
 .info-text {
   text-align: center;
 }
+
+.post-image {
+  max-width: 8rem;
+  max-height: 8rem;
+}

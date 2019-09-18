@@ -3,7 +3,10 @@
     <mat-expansion-panel-header>
       {{ post.title }}
     </mat-expansion-panel-header>
+
+    <img class="post-image" [src]="post.imageSrc">
     <p>{{ post.content }}</p>
+    
     <mat-action-row>
       <button mat-button color="primary" (click)="onPostEdit(post.id)">EDIT</button>
       <button mat-button color="warn" (click)="onPostDelete(post.id)">DELETE</button>

@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const mongodbPassword = require('./../sensitive-data/mongodb-password');
 const app = express();
 const postsRoutes = require('./routes/posts');
+const path = require('path');
 
 mongoose.connect(`mongodb+srv://vadym:${mongodbPassword}@cluster0-lrab3.mongodb.net/nodejs-sandbox?retryWrites=true&w=majority`)
     .then(() => {
@@ -15,6 +16,7 @@ mongoose.connect(`mongodb+srv://vadym:${mongodbPassword}@cluster0-lrab3.mongodb.
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use('/images', express.static('backend/images'));
 
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -30,11 +32,13 @@ app.use((req, res, next) => {
     next();
 });
 
+
+app.use('/api/posts', postsRoutes);
+
 app.get('/', (req, res, next) => {
     res.setHeader('Content-Type', 'text/html');
     res.send('<h1>The home server page!</h1>');
 });
 
-app.use('/api/posts', postsRoutes);
 
 module.exports = app;

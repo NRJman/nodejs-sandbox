@@ -1,6 +1,6 @@
-import { Directive, AfterViewInit, ElementRef, OnDestroy, Output, EventEmitter } from "@angular/core";
-import { fromEvent } from "rxjs";
-import { take, tap, takeUntil } from "rxjs/operators";
+import { Directive, AfterViewInit, ElementRef, OnDestroy, Output, EventEmitter } from '@angular/core';
+import { fromEvent } from 'rxjs';
+import { take, tap, takeUntil } from 'rxjs/operators';
 
 @Directive({
     selector: '[appMarkControlAsTouched]'

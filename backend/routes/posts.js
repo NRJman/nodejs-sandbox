@@ -1,6 +1,32 @@
 const express = require('express');
 const router = express.Router();
 const Post = require('./../models/post');
+const multer = require('multer');
+const MIME_TYPES_MAP = {
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'image/jpg': 'jpg',
+    'image/jpeg': 'jpeg'
+};
+
+
+const storage = multer.diskStorage({
+    destination: (req, file, callback) => {
+        let error = null;
+
+        if (!(file.mimetype in MIME_TYPES_MAP)) {
+            error = new Error('Invalid mimetype!');
+        }
+
+        callback(error, 'backend/images');
+    },
+    filename: (req, file, callback) => {
+        const name = file.originalname.toLowerCase().split(' ').join('-');
+//      const extension = MIME_TYPES_MAP[file.mimetype];
+
+        callback(null, Date.now() + '-' + name);
+    }
+});
 
 router.get('', (req, res, next) => {
     const promisedFind = Post.find().exec();
@@ -13,7 +39,8 @@ router.get('', (req, res, next) => {
                     return {
                         id: post._id,
                         title: post.title,
-                        content: post.content
+                        content: post.content,
+                        imageSrc: post.imageSrc
                     }
                 })
             });
@@ -23,12 +50,15 @@ router.get('', (req, res, next) => {
         });
 });
 
-router.post('', (req, res, next) => {
+router.post('', multer({ storage }).single('image'), (req, res, next) => {
+    const serverUrl = req.protocol + '://' + req.get('host');
     const post = new Post({
         title: req.body.title,
-        content: req.body.content
+        content: req.body.content,
+        imageSrc: serverUrl + '/images/' + req.file.filename
     });
     
+    console.log(req.file.filename);
     console.log(post);
     post.save();
 
@@ -37,7 +67,8 @@ router.post('', (req, res, next) => {
         post: {
             id: post._id,
             title: post.title,
-            content: post.content
+            content: post.content,
+            imageSrc: post.imageSrc
         }
     });
 });

@@ -20,13 +20,13 @@ export class PostListComponent extends UnsubscriberService implements OnInit, On
     super();
   }
 
-  onPostDelete(id: string): void {
-    this.postsService.deletePostOnServer(id)
+  onPostDelete(idToDelete: string): void {
+    this.postsService.deletePostOnServer(idToDelete)
       .pipe(
         takeUntil(this.subscriptionController$$)
       )
-      .subscribe(({ post }: PostsResponse) => {
-        this.postsService.deletePostLocally(post.id);
+      .subscribe(({ id }: PostsResponse) => {
+        this.postsService.deletePostLocally(id);
       });
   }
 

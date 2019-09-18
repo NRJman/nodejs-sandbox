@@ -26,8 +26,14 @@ export class PostsService {
     return this.http.get<PostsResponse>(this.postsAPIServerURL);
   }
 
-  storePostOnServer(title: string, content: string): Observable<PostsResponse> {
-    return this.http.post<PostsResponse>(this.postsAPIServerURL, { id: null, title, content });
+  storePostOnServer(title: string, content: string, image: File): Observable<PostsResponse> {
+    const formData: FormData = new FormData();
+
+    formData.append('title', title);
+    formData.append('content', content);
+    formData.append('image', image);
+
+    return this.http.post<PostsResponse>(this.postsAPIServerURL, formData);
   }
 
   deletePostOnServer(id: string) {
