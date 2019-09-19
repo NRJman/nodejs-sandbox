@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 
-import { Post } from '../../shared/models/post.model';
+import { Post, PostsList } from '../../shared/models/post.model';
 import { PostsService } from '../posts.service';
 import { PostsResponse } from '../../shared/models/posts.response.model';
 import { Router } from '@angular/router';
@@ -13,7 +13,8 @@ import { takeUntil } from 'rxjs/operators';
   styleUrls: ['./post-list.component.css']
 })
 export class PostListComponent extends UnsubscriberService implements OnInit, OnDestroy {
-  public posts: Post[] = [];
+  public posts: PostsList;
+  public postsIds: string[];
   public postsListPending: boolean = this.postsService.postsListPending;
 
   constructor(public postsService: PostsService, private router: Router) {
@@ -36,6 +37,7 @@ export class PostListComponent extends UnsubscriberService implements OnInit, On
 
   ngOnInit(): void {
     this.posts = this.postsService.getPosts();
+    this.postsIds = Object.keys(this.posts);
 
     this.handleSubscriptions();
   }
@@ -49,8 +51,9 @@ export class PostListComponent extends UnsubscriberService implements OnInit, On
       .pipe(
         takeUntil(this.subscriptionController$$)
       )
-      .subscribe((posts: Post[]) => {
+      .subscribe((posts: PostsList) => {
         this.posts = posts;
+        this.postsIds = Object.keys(posts);
       });
 
     this.postsService.postsListPendingUpdated$

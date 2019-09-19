@@ -16,7 +16,6 @@ mongoose.connect(`mongodb+srv://vadym:${mongodbPassword}@cluster0-lrab3.mongodb.
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use('/images', express.static('backend/images'));
 
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -32,6 +31,7 @@ app.use((req, res, next) => {
     next();
 });
 
+app.use('/images', express.static('backend/images'));
 
 app.use('/api/posts', postsRoutes);
 

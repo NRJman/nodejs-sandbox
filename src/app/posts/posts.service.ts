@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Subject, Observable } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
-import { Post } from '../shared/models/post.model';
+import { Post, PostUpdated, PostsList } from '../shared/models/post.model';
 import { HttpClient } from '@angular/common/http';
 import { PostsResponse } from '../shared/models/posts.response.model';
 
@@ -10,15 +10,15 @@ import { PostsResponse } from '../shared/models/posts.response.model';
 export class PostsService {
   private _postsListPendingUpdated$$: Subject<boolean> = new Subject<boolean>();
   private _postsListPending: boolean;
-  private posts: Post[] = [];
-  private postsUpdated$$: Subject<Post[]> = new Subject<Post[]>();
+  private posts: PostsList = {};
+  private postsUpdated$$: Subject<PostsList> = new Subject<PostsList>();
   private exactPostUpdated$$: Subject<Observable<PostsResponse>> = new Subject<Observable<PostsResponse>>();
   private postsAPIServerURL = 'http://localhost:3000/api/posts/';
 
   constructor(private http: HttpClient) { }
 
-  addPost(post: Post): void {
-    this.posts.push(post);
+  addPost(id: string, post: Post): void {
+    this.posts[id] = post;
     this.postsUpdated$$.next(this.getPosts());
   }
 
@@ -40,40 +40,42 @@ export class PostsService {
     return this.http.delete(this.postsAPIServerURL + id);
   }
 
-  updateExactPostOnServer(id: string, title: string, content: string): void {
+  updateExactPostOnServer(
+    id: string,
+    fieldsToUpdate: { title?: string, content?: string, image?: File } | null
+  ): void {
+    const formData: FormData = new FormData();
+
+    for (const fieldName in fieldsToUpdate) {
+      if (fieldsToUpdate[fieldName]) {
+        formData.append(fieldName, fieldsToUpdate[fieldName]);
+      }
+    }
+
     this.exactPostUpdated$$.next(
-      this.http.patch<PostsResponse>(this.postsAPIServerURL + id, { id, title, content })
+      this.http.patch<PostsResponse>(this.postsAPIServerURL + id, formData)
     );
   }
 
-  storePostsLocally(posts: Post[]): void {
+  storePostsLocally(posts: PostsList): void {
     this.posts = posts;
-    this.postsUpdated$$.next([...this.posts]);
+    this.postsUpdated$$.next({ ...posts });
   }
 
   deletePostLocally(targetId: string): void {
     const posts = this.posts;
 
-    for (let i = 0, len = posts.length; i < len; i++) {
-      if (posts[i].id === targetId) {
-        posts.splice(i, 1);
-        this.postsUpdated$$.next([...this.posts]);
-        break;
-      }
-    }
+    delete posts[targetId];
+    this.postsUpdated$$.next({ ...posts });
   }
 
-  updateExactPostLocally({ id, title, content }: Post): void {
-    const posts: Post[] = this.posts;
+  updateExactPostLocally(id: string, postUpdated: PostUpdated): void {
+    const posts: PostsList = this.posts;
 
-    for (let i = 0, len = posts.length; i < len; i++) {
-      if (posts[i].id === id) {
-        posts[i].title = title;
-        posts[i].content = content;
-
-        return;
-      }
-    }
+    posts[id] = {
+      ...posts[id],
+      ...postUpdated
+    };
   }
 
   set postsListPending(isPostsListPending: boolean) {
@@ -86,8 +88,8 @@ export class PostsService {
     this._postsListPending = isPostsListPending;
   }
 
-  getPosts(): Post[] {
-    return [...this.posts];
+  getPosts(): PostsList {
+    return { ...this.posts };
   }
 
   getPostsUpdateListener() {

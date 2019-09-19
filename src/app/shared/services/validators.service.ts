@@ -1,10 +1,16 @@
 import { Observable, of, Observer } from 'rxjs';
 import { ValidationErrors, FormControl } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 
+@Injectable()
 export class ValidatorsService {
+    constructor(private http: HttpClient) { }
+
     public fileTypedAsImage(control: FormControl): Observable<ValidationErrors> {
+        const validatorsService = this;
+        const controlValue: File | string = control.value;
         const validator$: Observable<ValidationErrors> = Observable.create((observer: Observer<ValidationErrors>) => {
-            const blob = control.value as File;
             const fileReader: FileReader = new FileReader();
 
             fileReader.onloadend = () => {
@@ -38,9 +44,22 @@ export class ValidatorsService {
                 observer.complete();
             };
 
-            fileReader.readAsArrayBuffer(blob);
+            if (controlValue instanceof File) {
+                fileReader.readAsArrayBuffer(controlValue);
+
+                return;
+            }
+
+            validatorsService.getFileObject(controlValue)
+                .subscribe((file: File) => {
+                    fileReader.readAsArrayBuffer(file);
+                });
         });
 
         return validator$;
+    }
+
+    private getFileObject(url: string): Observable<Blob> {
+        return this.http.get(url, {responseType: 'blob'});
     }
 }

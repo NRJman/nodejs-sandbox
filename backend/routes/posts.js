@@ -32,17 +32,20 @@ router.get('', (req, res, next) => {
     const promisedFind = Post.find().exec();
 
     promisedFind
-        .then((posts) => {            
+        .then((posts) => {
+            const formattedPosts = {};
+            
+            for (let i = 0, len = posts.length; i < len; i++) {
+                formattedPosts[posts[i]._id] = {
+                    title: posts[i].title,
+                    content: posts[i].content,
+                    imageSrc: posts[i].imageSrc
+                };
+            }
+
             res.status(200).json({
                 message: 'Successfully fetched the posts!',
-                posts: posts.map((post) => {
-                    return {
-                        id: post._id,
-                        title: post.title,
-                        content: post.content,
-                        imageSrc: post.imageSrc
-                    }
-                })
+                posts: formattedPosts
             });
         })
         .catch((error) => {
@@ -58,14 +61,13 @@ router.post('', multer({ storage }).single('image'), (req, res, next) => {
         imageSrc: serverUrl + '/images/' + req.file.filename
     });
     
-    console.log(req.file.filename);
     console.log(post);
     post.save();
 
     res.status(201).json({ 
         message: 'Successfully created the post!',
+        id: post._id,
         post: {
-            id: post._id,
             title: post.title,
             content: post.content,
             imageSrc: post.imageSrc
@@ -91,22 +93,28 @@ router.delete('/:id', (req, res, next) => {
         });
 });
 
-router.patch('/:id', (req, res, next) => {
+router.patch('/:id', multer({ storage }).single('image'), (req, res, next) => {
     const targetId = req.params.id;
-    const newTitle = req.body.title;
-    const newContent = req.body.content; 
-    const promisedUpdateOne = Post.updateOne({ _id: targetId }, { title: newTitle, content: newContent}).exec();
+    const fieldsToUpdate = req.body;
+    let promisedUpdateOne;
+
+    if (req.file) {
+        const serverUrl = req.protocol + '://' + req.get('host');
+
+        fieldsToUpdate.imageSrc = serverUrl + '/images/' + req.file.filename;
+    }
+
+    promisedUpdateOne = Post.updateOne({ _id: targetId }, { ...fieldsToUpdate }).exec();
 
     promisedUpdateOne
         .then((data) => {
-            console.log(data);
-        
+            console.log('The post has been updated: ', data);
+
             res.status(200).json({
                 message: 'Successfully updated the post!',
-                post: {
-                    id: targetId,
-                    title: newTitle,
-                    content: newContent
+                id: targetId,
+                postUpdated: {
+                    ...fieldsToUpdate
                 }
             });
         })

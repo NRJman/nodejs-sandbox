@@ -1,10 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { NgForm, FormGroup, FormControl, Validators } from '@angular/forms';
+import { FormGroup, FormControl, Validators, AbstractControl } from '@angular/forms';
 
 import { PostsService } from '../posts.service';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Post } from 'src/app/shared/models/post.model';
-import { Subscription } from 'rxjs';
+import { Post, PostsList } from 'src/app/shared/models/post.model';
 import { PostsResponse } from 'src/app/shared/models/posts.response.model';
 import { UnsubscriberService } from 'src/app/shared/services/unsubscriber.service';
 import { takeUntil } from 'rxjs/operators';
@@ -39,7 +38,15 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
     }
 
     if (this.isEditMode) {
-      this.postsService.updateExactPostOnServer(this.targetPostId, this.postForm.value.title, this.postForm.value.content);
+      const fieldsToUpdate: { title?: string, content?: string, image?: File } = this.getDirtiedControls(this.postForm.controls);
+
+      if (!fieldsToUpdate) {
+        this.router.navigate(['/']);
+
+        return;
+      }
+
+      this.postsService.updateExactPostOnServer(this.targetPostId, fieldsToUpdate);
 
       return;
     }
@@ -50,8 +57,8 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
       .pipe(
         takeUntil(this.subscriptionController$$)
       )
-      .subscribe((response: { message: string, post: Post }) => {
-        this.postsService.addPost(response.post);
+      .subscribe(({ post, id }: PostsResponse) => {
+        this.postsService.addPost(id, post);
         this.router.navigate(['/']);
       });
   }
@@ -67,6 +74,7 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
     if (file) {
       this.postForm.patchValue({ image: file });
       this.postForm.get('image').updateValueAndValidity();
+      this.postForm.get('image').markAsDirty();
       this.imageTitle = file.name;
       fileReader.readAsDataURL(file);
     }
@@ -99,9 +107,14 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
       return;
     }
 
-    if (this.postsService.getPosts().length) {
+    if (Object.keys(this.postsService.getPosts()).length) {
       this.initializePostForm(getNeededPost(this.postsService.getPosts(), this.targetPostId));
+      this.imageSrc = this.postForm.value.image;
+
+      return;
     }
+
+    const postsServiceCopy = this.postsService;
 
     this.postsService.postsListPendingUpdated$
       .pipe(
@@ -111,14 +124,13 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
         this.postsListPending = isPostsListPending;
 
         if (!isPostsListPending) {
-          this.initializePostForm(getNeededPost(this.postsService.getPosts(), this.targetPostId));
+          this.initializePostForm(getNeededPost(postsServiceCopy.getPosts(), this.targetPostId));
+          this.imageSrc = this.postForm.value.image;
         }
       });
 
-    function getNeededPost(posts: Post[], targetPostId: string): Post {
-      return posts.find(post => {
-        return post.id === targetPostId;
-      });
+    function getNeededPost(posts: PostsList, id: string): Post {
+      return posts[id];
     }
   }
 
@@ -126,7 +138,9 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
     this.postForm = new FormGroup({
       title: new FormControl(neededPost ? neededPost.title : null, [Validators.minLength(3), Validators.required]),
       content: new FormControl(neededPost ? neededPost.content : null, [Validators.required]),
-      image: new FormControl(null, [Validators.required], [this.validatorsService.fileTypedAsImage])
+      image: new FormControl(neededPost ? neededPost.imageSrc : null, [Validators.required], [
+        this.validatorsService.fileTypedAsImage.bind(this.validatorsService)
+      ])
     });
   }
 
@@ -135,13 +149,23 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
       .pipe(
         takeUntil(this.subscriptionController$$)
       )
-      .subscribe(({ post }: PostsResponse) => {
-        this.postsService.updateExactPostLocally({
-          id: post.id,
-          title: post.title,
-          content: post.content
-        });
+      .subscribe(({ id, postUpdated }: PostsResponse) => {
+        this.postsService.updateExactPostLocally(id, postUpdated);
         this.router.navigate(['/']);
       });
+  }
+
+  private getDirtiedControls(
+    controls: { [key: string]: AbstractControl }
+  ): { title?: string, content?: string, image?: File } {
+    const dirtiedControls: object = {};
+
+    for (const controlName in controls) {
+      if (controls[controlName].dirty) {
+        dirtiedControls[controlName] = controls[controlName].value;
+      }
+    }
+
+    return (Object.entries(dirtiedControls).length > 0) ? dirtiedControls : null;
   }
 }

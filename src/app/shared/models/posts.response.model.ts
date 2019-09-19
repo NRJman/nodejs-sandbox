@@ -1,8 +1,9 @@
-import { Post } from './post.model';
+import { Post, PostUpdated } from './post.model';
 
 export interface PostsResponse {
     message: string;
-    posts?: Post[];
+    posts?: { [id: string]: Post };
     post?: Post;
+    postUpdated?: PostUpdated;
     id?: string;
 }
