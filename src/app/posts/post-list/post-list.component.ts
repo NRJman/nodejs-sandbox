@@ -3,7 +3,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Post, PostsList } from '../../shared/models/post.model';
 import { PostsService } from '../posts.service';
 import { PostsResponse } from '../../shared/models/posts.response.model';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { UnsubscriberService } from 'src/app/shared/services/unsubscriber.service';
 import { takeUntil } from 'rxjs/operators';
 
@@ -14,10 +14,17 @@ import { takeUntil } from 'rxjs/operators';
 })
 export class PostListComponent extends UnsubscriberService implements OnInit, OnDestroy {
   public posts: PostsList;
-  public postsIds: string[];
+  public postsIds: string[] = [];
   public postsListPending: boolean = this.postsService.postsListPending;
+  public totalPostsListLength: number;
+  public pageSize = 2;
+  public pageSizeOptions: number[] = [2, 5, 10];
 
-  constructor(public postsService: PostsService, private router: Router) {
+  constructor(
+    public postsService: PostsService,
+    private router: Router,
+    private route: ActivatedRoute
+  ) {
     super();
   }
 
@@ -35,18 +42,50 @@ export class PostListComponent extends UnsubscriberService implements OnInit, On
     this.router.navigate(['/edit-post', id]);
   }
 
-  ngOnInit(): void {
-    this.posts = this.postsService.getPosts();
-    this.postsIds = Object.keys(this.posts);
+  onPaginatorDataChange(event): void {
+    console.log(event);
+  }
 
-    this.handleSubscriptions();
+  ngOnInit(): void {
+    this.totalPostsListLength = this.route.snapshot.data.postsListLength;
+
+    this.handleInitialSubscriptions();
+    this.preloadPosts();
   }
 
   ngOnDestroy(): void {
     super.ngOnDestroy();
   }
 
-  private handleSubscriptions(): void {
+  private preloadPosts(): void {
+    this.posts = this.postsService.getPosts();
+    this.postsIds = this.postsService.getPostsIds();
+
+    if (!this.postsIds.length) {
+      this.postsService.postsListPending = true;
+
+      this.postsService.fetchPostsInitially()
+        .pipe(
+          takeUntil(this.subscriptionController$$)
+        )
+        .subscribe((response: PostsResponse) => {
+          this.postsService.storePostsLocally(response.posts);
+          this.posts = this.postsService.getPosts();
+          this.postsIds = this.postsService.getPostsIds();
+          this.postsService.postsListPending = false;
+        });
+    }
+  }
+
+  private handleInitialSubscriptions(): void {
+    this.postsService.postsListPendingUpdated$
+      .pipe(
+        takeUntil(this.subscriptionController$$)
+      )
+      .subscribe((isPostsListPending: boolean) => {
+        this.postsListPending = isPostsListPending;
+      });
+
     this.postsService.getPostsUpdateListener()
       .pipe(
         takeUntil(this.subscriptionController$$)
@@ -54,14 +93,6 @@ export class PostListComponent extends UnsubscriberService implements OnInit, On
       .subscribe((posts: PostsList) => {
         this.posts = posts;
         this.postsIds = Object.keys(posts);
-      });
-
-    this.postsService.postsListPendingUpdated$
-      .pipe(
-        takeUntil(this.subscriptionController$$)
-      )
-      .subscribe((isPostsListPending: boolean) => {
-        this.postsListPending = isPostsListPending;
       });
   }
 }

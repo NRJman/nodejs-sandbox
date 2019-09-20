@@ -92,7 +92,7 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
     }
 
     this.handlePostFormInitializing();
-    this.handleSubscriptions();
+    this.handleInitialSubscriptions();
   }
 
   ngOnDestroy(): void {
@@ -144,7 +144,7 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
     });
   }
 
-  private handleSubscriptions(): void {
+  private handleInitialSubscriptions(): void {
     this.postsService.getExactPostUpdateListener()
       .pipe(
         takeUntil(this.subscriptionController$$)

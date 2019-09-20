@@ -1,29 +1,49 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject } from '@angular/core';
 import { Subject, Observable } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
 import { Post, PostUpdated, PostsList } from '../shared/models/post.model';
 import { HttpClient } from '@angular/common/http';
 import { PostsResponse } from '../shared/models/posts.response.model';
+import { POSTS_API_SERVER_URL_TOKEN } from '../app.config';
 
 @Injectable({providedIn: 'root'})
 export class PostsService {
   private _postsListPendingUpdated$$: Subject<boolean> = new Subject<boolean>();
-  private _postsListPending: boolean;
+  private _postsListPending = false;
   private posts: PostsList = {};
+  private postsIds: string[] = [];
   private postsUpdated$$: Subject<PostsList> = new Subject<PostsList>();
   private exactPostUpdated$$: Subject<Observable<PostsResponse>> = new Subject<Observable<PostsResponse>>();
-  private postsAPIServerURL = 'http://localhost:3000/api/posts/';
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    private http: HttpClient,
+    @Inject(POSTS_API_SERVER_URL_TOKEN) private postsAPIServerURL: string
+  ) { }
 
   addPost(id: string, post: Post): void {
     this.posts[id] = post;
     this.postsUpdated$$.next(this.getPosts());
   }
 
-  fetchPosts(): Observable<PostsResponse> {
+  fetchPostsInitially(): Observable<PostsResponse> {
     return this.http.get<PostsResponse>(this.postsAPIServerURL);
+  }
+
+  fetchPosts(
+    currentPage: number,
+    targetPage: number,
+    firstPostIdOnCurrentPage: string,
+    pageSize: number
+  ): Observable<PostsResponse> {
+    return this.http.get<PostsResponse>(this.postsAPIServerURL, {
+      params: {
+        currentPageIndex: String(currentPage),
+        targetPageIndex: String(targetPage),
+        firstPostIdOnCurrentPage,
+        pageSize: String(pageSize)
+      }
+    });
   }
 
   storePostOnServer(title: string, content: string, image: File): Observable<PostsResponse> {
@@ -59,6 +79,7 @@ export class PostsService {
 
   storePostsLocally(posts: PostsList): void {
     this.posts = posts;
+    this.postsIds = Object.keys(posts);
     this.postsUpdated$$.next({ ...posts });
   }
 
@@ -90,6 +111,10 @@ export class PostsService {
 
   getPosts(): PostsList {
     return { ...this.posts };
+  }
+
+  getPostsIds(): string[] {
+    return [...this.postsIds];
   }
 
   getPostsUpdateListener() {

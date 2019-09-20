@@ -1,3 +1,7 @@
+<p class="info-text mat-body-1" *ngIf="postsIds.length === 0 && !postsListPending">No posts added yet!</p>
+
+<mat-spinner *ngIf="postsListPending" style="margin: 1rem auto 0;" [diameter]="40"></mat-spinner>
+
 <mat-accordion multi="true" *ngIf="postsIds.length > 0">
   <mat-expansion-panel *ngFor="let id of postsIds">
     <mat-expansion-panel-header>
@@ -14,6 +18,10 @@
   </mat-expansion-panel>
 </mat-accordion>
 
-<p class="info-text mat-body-1" *ngIf="posts.length <= 0 && !postsListPending">No posts added yet!</p>
-
-<mat-spinner *ngIf="postsListPending" style="margin: 1rem auto 0;" [diameter]="40"></mat-spinner>
+<mat-paginator 
+  class="paginator-section"
+  [length]="totalPostsListLength"
+  [pageSize]="pageSize"
+  [pageSizeOptions]="pageSizeOptions"
+  (page)="onPaginatorDataChange($event)"
+></mat-paginator>

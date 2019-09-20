@@ -22,7 +22,6 @@ const storage = multer.diskStorage({
     },
     filename: (req, file, callback) => {
         const name = file.originalname.toLowerCase().split(' ').join('-');
-//      const extension = MIME_TYPES_MAP[file.mimetype];
 
         callback(null, Date.now() + '-' + name);
     }
@@ -30,6 +29,8 @@ const storage = multer.diskStorage({
 
 router.get('', (req, res, next) => {
     const promisedFind = Post.find().exec();
+    const { currentPageIndex, pageSize, firstPostIdOnCurrentPage } = req.params;
+    const pageIndexesDifference = currentPageIndex - req.params.targetPageIndex;
 
     promisedFind
         .then((posts) => {
@@ -51,6 +52,15 @@ router.get('', (req, res, next) => {
         .catch((error) => {
             console.log('Failed to get instance of posts collection: ', error);
         });
+});
+
+router.get('/count', (req, res, next) => {
+    Post.estimatedDocumentCount().then(postsListLength => {
+        res.status(200).json({
+            message: 'Successfully fetched the number of posts!',
+            postsListLength
+        });
+    })
 });
 
 router.post('', multer({ storage }).single('image'), (req, res, next) => {

@@ -6,4 +6,5 @@ export interface PostsResponse {
     post?: Post;
     postUpdated?: PostUpdated;
     id?: string;
+    postsListLength?: number;
 }
