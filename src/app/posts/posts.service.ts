@@ -3,7 +3,7 @@ import { Subject, Observable } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
 import { Post, PostUpdated, PostsList } from '../shared/models/post.model';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { PostsResponse } from '../shared/models/posts.response.model';
 import { POSTS_API_SERVER_URL_TOKEN } from '../app.config';
 
@@ -11,7 +11,7 @@ import { POSTS_API_SERVER_URL_TOKEN } from '../app.config';
 export class PostsService {
   private _postsListPendingUpdated$$: Subject<boolean> = new Subject<boolean>();
   private _postsListPending = false;
-  private posts: PostsList = {};
+  private postsToRender: PostsList = {};
   private postsIds: string[] = [];
   private postsUpdated$$: Subject<PostsList> = new Subject<PostsList>();
   private exactPostUpdated$$: Subject<Observable<PostsResponse>> = new Subject<Observable<PostsResponse>>();
@@ -21,13 +21,11 @@ export class PostsService {
     @Inject(POSTS_API_SERVER_URL_TOKEN) private postsAPIServerURL: string
   ) { }
 
-  addPost(id: string, post: Post): void {
-    this.posts[id] = post;
-    this.postsUpdated$$.next(this.getPosts());
-  }
+  fetchPostsInitially(pageSize: number): Observable<PostsResponse> {
+    const params: HttpParams = new HttpParams()
+      .set('pageSize', String(pageSize));
 
-  fetchPostsInitially(): Observable<PostsResponse> {
-    return this.http.get<PostsResponse>(this.postsAPIServerURL);
+    return this.http.get<PostsResponse>(this.postsAPIServerURL, { params });
   }
 
   fetchPosts(
@@ -36,14 +34,18 @@ export class PostsService {
     firstPostIdOnCurrentPage: string,
     pageSize: number
   ): Observable<PostsResponse> {
-    return this.http.get<PostsResponse>(this.postsAPIServerURL, {
-      params: {
-        currentPageIndex: String(currentPage),
-        targetPageIndex: String(targetPage),
-        firstPostIdOnCurrentPage,
-        pageSize: String(pageSize)
-      }
-    });
+    let params: HttpParams;
+
+    if (firstPostIdOnCurrentPage !== null && currentPage !== null && targetPage !== null) {
+      params = new HttpParams().set('currentPageIndex', String(currentPage))
+        .set('targetPageIndex', String(targetPage))
+        .set('firstPostIdOnCurrentPage', firstPostIdOnCurrentPage)
+        .set('pageSize', String(pageSize));
+    } else {
+      params = new HttpParams().set('pageSize', String(pageSize));
+    }
+
+    return this.http.get<PostsResponse>(this.postsAPIServerURL, { params });
   }
 
   storePostOnServer(title: string, content: string, image: File): Observable<PostsResponse> {
@@ -78,20 +80,13 @@ export class PostsService {
   }
 
   storePostsLocally(posts: PostsList): void {
-    this.posts = posts;
+    this.postsToRender = posts;
     this.postsIds = Object.keys(posts);
     this.postsUpdated$$.next({ ...posts });
   }
 
-  deletePostLocally(targetId: string): void {
-    const posts = this.posts;
-
-    delete posts[targetId];
-    this.postsUpdated$$.next({ ...posts });
-  }
-
   updateExactPostLocally(id: string, postUpdated: PostUpdated): void {
-    const posts: PostsList = this.posts;
+    const posts: PostsList = this.postsToRender;
 
     posts[id] = {
       ...posts[id],
@@ -109,11 +104,11 @@ export class PostsService {
     this._postsListPending = isPostsListPending;
   }
 
-  getPosts(): PostsList {
-    return { ...this.posts };
+  getPostsToRender(): PostsList {
+    return { ...this.postsToRender };
   }
 
-  getPostsIds(): string[] {
+  getPostsToRenderIds(): string[] {
     return [...this.postsIds];
   }
 

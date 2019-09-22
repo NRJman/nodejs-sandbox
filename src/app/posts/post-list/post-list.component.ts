@@ -6,6 +6,8 @@ import { PostsResponse } from '../../shared/models/posts.response.model';
 import { Router, ActivatedRoute } from '@angular/router';
 import { UnsubscriberService } from 'src/app/shared/services/unsubscriber.service';
 import { takeUntil } from 'rxjs/operators';
+import { PostsListPaginationService } from './posts-list-pagination.service';
+import { PaginationData } from 'src/app/shared/models/pagination-data.model';
 
 @Component({
   selector: 'app-post-list',
@@ -16,12 +18,12 @@ export class PostListComponent extends UnsubscriberService implements OnInit, On
   public posts: PostsList;
   public postsIds: string[] = [];
   public postsListPending: boolean = this.postsService.postsListPending;
-  public totalPostsListLength: number;
-  public pageSize = 2;
+  public paginationData: PaginationData;
   public pageSizeOptions: number[] = [2, 5, 10];
 
   constructor(
-    public postsService: PostsService,
+    private postsService: PostsService,
+    private postsListPaginationService: PostsListPaginationService,
     private router: Router,
     private route: ActivatedRoute
   ) {
@@ -34,7 +36,7 @@ export class PostListComponent extends UnsubscriberService implements OnInit, On
         takeUntil(this.subscriptionController$$)
       )
       .subscribe(({ id }: PostsResponse) => {
-        this.postsService.deletePostLocally(id);
+        this.fetchPosts();
       });
   }
 
@@ -42,14 +44,32 @@ export class PostListComponent extends UnsubscriberService implements OnInit, On
     this.router.navigate(['/edit-post', id]);
   }
 
-  onPaginatorDataChange(event): void {
-    console.log(event);
+  onPaginatorDataChange(paginationData: PaginationData): void {
+    if (paginationData.pageSize !== this.postsListPaginationService.getPaginationData().pageSize) {
+      paginationData = {
+        ...paginationData,
+        pageIndex: null,
+        previousPageIndex: null,
+      };
+    }
+
+    this.postsListPaginationService.updatePaginationData(paginationData);
+    this.paginationData = paginationData;
+    this.fetchPosts();
   }
 
   ngOnInit(): void {
-    this.totalPostsListLength = this.route.snapshot.data.postsListLength;
+    if (this.postsService.getPostsToRenderIds().length) {
+      this.posts = this.postsService.getPostsToRender();
+      this.postsIds = this.postsService.getPostsToRenderIds();
+
+      this.handleInitialSubscriptions();
+
+      return;
+    }
 
     this.handleInitialSubscriptions();
+    this.initializePagination();
     this.preloadPosts();
   }
 
@@ -57,24 +77,60 @@ export class PostListComponent extends UnsubscriberService implements OnInit, On
     super.ngOnDestroy();
   }
 
+  private initializePagination(): void {
+    const paginationData = this.postsListPaginationService.getPaginationData();
+
+    if (paginationData.pageIndex && paginationData.previousPageIndex) {
+      this.paginationData = paginationData;
+      this.fetchPosts();
+
+      return;
+    }
+
+    const paginationDataToUpdate = {
+      length: this.route.snapshot.data.postsListLength as number,
+      pageSize: 2
+    };
+
+    this.postsListPaginationService.updatePaginationData(paginationDataToUpdate);
+    this.paginationData = {
+      ...this.paginationData,
+      ...paginationDataToUpdate
+    };
+  }
+
   private preloadPosts(): void {
-    this.posts = this.postsService.getPosts();
-    this.postsIds = this.postsService.getPostsIds();
+    this.posts = this.postsService.getPostsToRender();
+    this.postsIds = this.postsService.getPostsToRenderIds();
 
     if (!this.postsIds.length) {
       this.postsService.postsListPending = true;
 
-      this.postsService.fetchPostsInitially()
+      this.postsService.fetchPostsInitially(this.paginationData.pageSize)
         .pipe(
           takeUntil(this.subscriptionController$$)
         )
         .subscribe((response: PostsResponse) => {
-          this.postsService.storePostsLocally(response.posts);
-          this.posts = this.postsService.getPosts();
-          this.postsIds = this.postsService.getPostsIds();
-          this.postsService.postsListPending = false;
+          this.handlePostsFetching(response);
         });
     }
+  }
+
+  private fetchPosts(): void {
+    const { pageIndex, previousPageIndex } = this.paginationData;
+
+    this.postsService.fetchPosts(
+      this.paginationData.previousPageIndex,
+      this.paginationData.pageIndex,
+      (pageIndex !== null && previousPageIndex !== null) ? this.postsIds[0] : null,
+      this.paginationData.pageSize
+    )
+    .pipe(
+      takeUntil(this.subscriptionController$$)
+    )
+    .subscribe((response: PostsResponse) => {
+      this.handlePostsFetching(response);
+    });
   }
 
   private handleInitialSubscriptions(): void {
@@ -94,5 +150,12 @@ export class PostListComponent extends UnsubscriberService implements OnInit, On
         this.posts = posts;
         this.postsIds = Object.keys(posts);
       });
+  }
+
+  private handlePostsFetching(postsFetchingResponse: PostsResponse): void {
+    this.postsService.storePostsLocally(postsFetchingResponse.posts);
+    this.posts = this.postsService.getPostsToRender();
+    this.postsIds = this.postsService.getPostsToRenderIds();
+    this.postsService.postsListPending = false;
   }
 }

@@ -58,7 +58,7 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
         takeUntil(this.subscriptionController$$)
       )
       .subscribe(({ post, id }: PostsResponse) => {
-        this.postsService.addPost(id, post);
+        // this.postsService.addPost(id, post);
         this.router.navigate(['/']);
       });
   }
@@ -107,8 +107,8 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
       return;
     }
 
-    if (Object.keys(this.postsService.getPosts()).length) {
-      this.initializePostForm(getNeededPost(this.postsService.getPosts(), this.targetPostId));
+    if (this.postsService.getPostsToRenderIds().length) {
+      this.initializePostForm(getNeededPost(this.postsService.getPostsToRender(), this.targetPostId));
       this.imageSrc = this.postForm.value.image;
 
       return;
@@ -124,7 +124,7 @@ export class PostCreateComponent extends UnsubscriberService implements OnInit, 
         this.postsListPending = isPostsListPending;
 
         if (!isPostsListPending) {
-          this.initializePostForm(getNeededPost(postsServiceCopy.getPosts(), this.targetPostId));
+          this.initializePostForm(getNeededPost(postsServiceCopy.getPostsToRender(), this.targetPostId));
           this.imageSrc = this.postForm.value.image;
         }
       });

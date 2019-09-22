@@ -20,8 +20,8 @@
 
 <mat-paginator 
   class="paginator-section"
-  [length]="totalPostsListLength"
-  [pageSize]="pageSize"
+  [length]="paginationData.length"
+  [pageSize]="paginationData.pageSize"
   [pageSizeOptions]="pageSizeOptions"
   (page)="onPaginatorDataChange($event)"
 ></mat-paginator>

@@ -28,30 +28,74 @@ const storage = multer.diskStorage({
 });
 
 router.get('', (req, res, next) => {
-    const promisedFind = Post.find().exec();
-    const { currentPageIndex, pageSize, firstPostIdOnCurrentPage } = req.params;
-    const pageIndexesDifference = currentPageIndex - req.params.targetPageIndex;
+    const firstPostIdOnCurrentPage = req.query.firstPostIdOnCurrentPage;
+    const pageSize = Number(req.query.pageSize);
+    let promisedFind;
+    let isItQueryBack = false;
 
-    promisedFind
-        .then((posts) => {
-            const formattedPosts = {};
-            
-            for (let i = 0, len = posts.length; i < len; i++) {
-                formattedPosts[posts[i]._id] = {
-                    title: posts[i].title,
-                    content: posts[i].content,
-                    imageSrc: posts[i].imageSrc
-                };
-            }
+    console.log(req.query);
 
-            res.status(200).json({
-                message: 'Successfully fetched the posts!',
-                posts: formattedPosts
+    if (!firstPostIdOnCurrentPage) {
+        promisedFind = Post
+            .find()
+            .limit(pageSize)
+            .exec();
+
+        setExecutionCallback();
+
+        return;
+    }
+
+    const currentPageIndex = Number(req.query.currentPageIndex);
+    let pageIndexesDifference = Number(req.query.targetPageIndex) - currentPageIndex;
+
+    if (pageIndexesDifference > 0) { // go to page: (current + pageIndexesDifference)
+        promisedFind = Post
+            .find({ _id: { $gte: firstPostIdOnCurrentPage } })
+            .skip(pageIndexesDifference * pageSize)
+            .limit(pageSize)
+            .sort('_id')
+            .exec();
+    } else { // go to page: (current - pageIndexesDifference)
+        pageIndexesDifference = Math.abs(pageIndexesDifference);
+        isItQueryBack = true;
+
+        promisedFind = Post
+            .find({ _id: { $lt: firstPostIdOnCurrentPage } })
+            .skip((pageIndexesDifference - 1) * pageSize)
+            .limit(pageSize)
+            .sort('-_id')
+            .exec();
+    }
+
+    setExecutionCallback();
+
+    function setExecutionCallback() {
+        promisedFind
+            .then((posts) => {
+                const formattedPosts = {};
+                
+                if (isItQueryBack) {
+                    posts = posts.reverse();
+                }
+                
+                for (let i = 0, len = posts.length; i < len; i++) {
+                    formattedPosts[posts[i]._id] = {
+                        title: posts[i].title,
+                        content: posts[i].content,
+                        imageSrc: posts[i].imageSrc
+                    };
+                }
+
+                res.status(200).json({
+                    message: 'Successfully fetched the posts!',
+                    posts: formattedPosts
+                });
+            })
+            .catch((error) => {
+                console.log('Failed to get instance of posts collection: ', error);
             });
-        })
-        .catch((error) => {
-            console.log('Failed to get instance of posts collection: ', error);
-        });
+    }
 });
 
 router.get('/count', (req, res, next) => {
