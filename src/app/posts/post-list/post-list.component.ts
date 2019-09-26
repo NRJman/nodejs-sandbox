@@ -59,30 +59,32 @@ export class PostListComponent extends UnsubscriberService implements OnInit, On
   }
 
   ngOnInit(): void {
+    const paginationData: PaginationData = this.postsListPaginationService.getPaginationData();
+
+    this.handleInitialSubscriptions();
+    this.initializePagination(paginationData);
+
     if (this.postsService.getPostsToRenderIds().length) {
       this.posts = this.postsService.getPostsToRender();
       this.postsIds = this.postsService.getPostsToRenderIds();
 
-      this.handleInitialSubscriptions();
-
       return;
     }
 
-    this.handleInitialSubscriptions();
-    this.initializePagination();
-    this.preloadPosts();
+    if (paginationData.pageIndex !== null && paginationData.previousPageIndex !== null) {
+      this.fetchPosts();
+    } else {
+      this.preloadPosts();
+    }
   }
 
   ngOnDestroy(): void {
     super.ngOnDestroy();
   }
 
-  private initializePagination(): void {
-    const paginationData = this.postsListPaginationService.getPaginationData();
-
+  private initializePagination(paginationData: PaginationData): void {
     if (paginationData.pageIndex && paginationData.previousPageIndex) {
       this.paginationData = paginationData;
-      this.fetchPosts();
 
       return;
     }
@@ -103,17 +105,15 @@ export class PostListComponent extends UnsubscriberService implements OnInit, On
     this.posts = this.postsService.getPostsToRender();
     this.postsIds = this.postsService.getPostsToRenderIds();
 
-    if (!this.postsIds.length) {
-      this.postsService.postsListPending = true;
+    this.postsService.postsListPending = true;
 
-      this.postsService.fetchPostsInitially(this.paginationData.pageSize)
-        .pipe(
-          takeUntil(this.subscriptionController$$)
-        )
-        .subscribe((response: PostsResponse) => {
-          this.handlePostsFetching(response);
-        });
-    }
+    this.postsService.fetchPostsInitially(this.paginationData.pageSize)
+      .pipe(
+        takeUntil(this.subscriptionController$$)
+      )
+      .subscribe((response: PostsResponse) => {
+        this.handlePostsFetching(response);
+      });
   }
 
   private fetchPosts(): void {
