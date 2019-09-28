@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const mongodbPassword = require('./../sensitive-data/mongodb-password');
 const app = express();
 const postsRoutes = require('./routes/posts');
-const path = require('path');
+const usersRoutes = require('./routes/users');
 
 mongoose.connect(`mongodb+srv://vadym:${mongodbPassword}@cluster0-lrab3.mongodb.net/nodejs-sandbox?retryWrites=true&w=majority`)
     .then(() => {
@@ -32,8 +32,8 @@ app.use((req, res, next) => {
 });
 
 app.use('/images', express.static('backend/images'));
-
 app.use('/api/posts', postsRoutes);
+app.use('/api/users', usersRoutes);
 
 app.get('/', (req, res, next) => {
     res.setHeader('Content-Type', 'text/html');

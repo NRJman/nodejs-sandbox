@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@angular/core';
 import { Subject, Observable } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
-import { Post, PostUpdated, PostsList } from '../shared/models/post.model';
+import { PostUpdated, PostsList } from '../shared/models/post.model';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { PostsResponse } from '../shared/models/posts.response.model';
 import { POSTS_API_SERVER_URL_TOKEN } from '../app.config';

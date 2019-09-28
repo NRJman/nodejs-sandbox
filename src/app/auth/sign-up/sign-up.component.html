@@ -5,7 +5,7 @@
     
             <mat-error *ngIf="signUpForm.get('email').errors?.required && signUpForm.get('email').touched">Please enter an email.</mat-error>
             <mat-error *ngIf="!signUpForm.get('email').errors?.required &&
-                            signUpForm.get('email').errors?.invalid &&
+                            signUpForm.get('email').errors?.email &&
                             signUpForm.get('email').touched"
             >The email is invalid.</mat-error>      
         </mat-form-field>
