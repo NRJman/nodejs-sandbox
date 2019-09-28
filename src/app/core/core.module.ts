@@ -4,6 +4,7 @@ import { AppRoutingModule } from './../app-routing.module';
 import { POSTS_API_SERVER_URL_TOKEN, POSTS_API_SERVER_URL } from '../app.config';
 import { PostsListLengthResolver } from '../shared/services/posts-list-length-resolver.service';
 import { PostsListPaginationService } from '../posts/post-list/posts-list-pagination.service';
+import { AuthModule } from '../auth/auth.module';
 
 @NgModule({
     providers: [
@@ -13,6 +14,7 @@ import { PostsListPaginationService } from '../posts/post-list/posts-list-pagina
     ],
     exports: [
         MaterialModule,
+        AuthModule,
         AppRoutingModule
     ]
 })

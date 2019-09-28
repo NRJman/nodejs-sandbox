@@ -3,6 +3,8 @@ import { RouterModule, Route } from '@angular/router';
 import { PostListComponent } from './posts/post-list/post-list.component';
 import { PostCreateComponent } from './posts/post-create/post-create.component';
 import { PostsListLengthResolver } from './shared/services/posts-list-length-resolver.service';
+import { SignInComponent } from './auth/sign-in/sign-in.component';
+import { SignUpComponent } from './auth/sign-up/sign-up.component';
 
 const routes: Route[] = [
     { path: '', component: PostListComponent, resolve: { postsListLength: PostsListLengthResolver } },

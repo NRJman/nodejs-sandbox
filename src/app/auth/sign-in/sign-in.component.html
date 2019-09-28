@@ -1,0 +1,30 @@
+<mat-card>
+    <form (submit)="handleSignInFormSubmission()" [formGroup]="signInForm">
+        <mat-form-field>
+            <input matInput formControlName="email" type="email" placeholder="Email">
+    
+            <mat-error *ngIf="signInForm.get('email').errors?.required && signInForm.get('email').touched">Please enter an email.</mat-error>
+            <mat-error *ngIf="!signInForm.get('email').errors?.required &&
+                            signInForm.get('email').errors?.invalid &&
+                            signInForm.get('email').touched"
+            >The email is invalid.</mat-error>      
+        </mat-form-field>
+
+        <mat-form-field>
+            <input matInput formControlName="password" type="password" placeholder="Password">
+            
+            <mat-error *ngIf="signInForm.get('password').errors?.required && signInForm.get('password').touched">Please enter a password.</mat-error>
+            <mat-error *ngIf="!signInForm.get('password').errors?.required &&
+                            signInForm.get('password').errors?.minlength &&
+                            signInForm.get('password').touched"
+            >The password should have at least 5 symbols.</mat-error> 
+        </mat-form-field>
+  
+      <button
+        mat-raised-button
+        color="accent"
+        type="submit"
+        [disabled]="signInForm.invalid"
+        >Sign In</button>
+    </form>
+</mat-card>

@@ -1,4 +1,8 @@
 <mat-toolbar class="nav-bar" color="primary">
     <h1 class="nav-title" [routerLink]="['/']">My Messages</h1>
-    <button mat-button [routerLink]="['create-post']">Create Post</button>
+    <div class="nav-controls">
+        <button mat-button [routerLink]="['create-post']">Create Post</button>
+        <button mat-button [routerLink]="['sign-in']">Sign In</button>
+        <button mat-button [routerLink]="['sign-up']">Sign Up</button>
+    </div>
 </mat-toolbar>
