@@ -6,6 +6,8 @@ import { USERS_API_SERVER_URL_TOKEN } from '../app.config';
 
 @Injectable()
 export class AuthService {
+    private _jsonWebToken: string;
+
     constructor(
         private http: HttpClient,
         @Inject(USERS_API_SERVER_URL_TOKEN) private usersAPIServerUrl: string
@@ -13,5 +15,17 @@ export class AuthService {
 
     createUserOnServer(user: UserData): Observable<object> {
         return this.http.post(this.usersAPIServerUrl, user);
+    }
+
+    fetchJsonWebToken(user: UserData): Observable<string> {
+        return this.http.post<string>(this.usersAPIServerUrl + '/login/', user);
+    }
+
+    get jsonWebToken(): string {
+        return this._jsonWebToken;
+    }
+
+    set jsonWebToken(token: string) {
+        this._jsonWebToken = token;
     }
 }
